@@ -1,0 +1,8 @@
+<resources>
+  <string name="app_name">CoffeeLog</string>
+  <string name="widget_quick_actions_description">CoffeeLog 빠른 등록</string>
+  <string name="widget_inventory_description">CoffeeLog 원두 상태</string>
+  <string name="widget_brew_description">CoffeeLog 추출 기록</string>
+  <string name="expo_splash_screen_resize_mode" translatable="false">contain</string>
+  <string name="expo_splash_screen_status_bar_translucent" translatable="false">false</string>
+</resources>

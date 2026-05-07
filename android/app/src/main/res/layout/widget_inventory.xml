@@ -1,0 +1,57 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  android:id="@+id/widget_root"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent"
+  android:background="@drawable/widget_background"
+  android:orientation="vertical"
+  android:padding="12dp">
+
+  <TextView
+    android:id="@+id/widget_title"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:ellipsize="end"
+    android:maxLines="1"
+    android:textColor="#2F2118"
+    android:textSize="16sp"
+    android:textStyle="bold" />
+
+  <TextView
+    android:id="@+id/widget_subtitle"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:ellipsize="end"
+    android:maxLines="1"
+    android:textColor="#735F50"
+    android:textSize="11sp" />
+
+  <TextView
+    android:id="@+id/metric_one"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="10dp"
+    android:ellipsize="end"
+    android:maxLines="1"
+    android:textColor="#B77946"
+    android:textSize="13sp"
+    android:textStyle="bold" />
+
+  <TextView
+    android:id="@+id/metric_two"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:ellipsize="end"
+    android:maxLines="1"
+    android:textColor="#2F2118"
+    android:textSize="12sp"
+    android:textStyle="bold" />
+
+  <TextView
+    android:id="@+id/metric_three"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:ellipsize="end"
+    android:maxLines="1"
+    android:textColor="#735F50"
+    android:textSize="12sp" />
+</LinearLayout>
