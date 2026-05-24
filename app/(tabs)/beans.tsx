@@ -323,10 +323,15 @@ const computedProductStatus = (product: CoffeeProduct, lots: CoffeePurchaseLot[]
 };
 
 const remainingText = (lot: CoffeePurchaseLot | null, logs: ReturnType<typeof useCoffeeStore.getState>['logs']) => {
-  if (!lot) return '-';
+  if (!lot) return '미입력';
   const value = getLotDisplayRemainingGram(lot, logs.filter(log => (log.purchaseLotId ?? log.beanId) === lot.id));
-  return value == null ? '-' : `${value}g`;
+  return value == null ? '미입력' : `${value}g`;
 };
+
+const optionalText = (value: string | null | undefined) => value?.trim() || '미입력';
+const optionalDate = (value: string | null | undefined) => value ?? '미입력';
+const optionalGram = (value: string | number | null | undefined) => value == null || value === '' ? '미입력' : `${value}g`;
+const optionalNumber = (value: number | null | undefined) => value == null ? '미입력' : `${value}`;
 
 const bestRating = (lotIds: string[], logs: ReturnType<typeof useCoffeeStore.getState>['logs']) => {
   const ratings = logs.filter(log => lotIds.includes(log.purchaseLotId ?? log.beanId)).map(log => log.rating).filter((value): value is number => typeof value === 'number');
@@ -462,8 +467,8 @@ function PurchaseLotCompactRow({
           <Text style={{ color: colors.primary, fontWeight: '800', fontSize: 12 }} numberOfLines={1}>{lotStatusLabel[lot.lotStatus]}</Text>
         </View>
         <View style={{ flex: 1, minWidth: 0 }}>
-          <Text style={{ color: colors.text, fontWeight: '800' }} numberOfLines={1}>로스팅 {lot.roastDate ?? '-'} · 구매 {lot.purchaseDate ?? '-'}</Text>
-          <Text style={styles.small} numberOfLines={1}>남은 양 {remainingText(lot, logs)} · 기록 {lotLogs.length}회 · {freshness?.compactMeta ?? `개봉 ${lot.openedDate ?? '-'}`}</Text>
+          <Text style={{ color: colors.text, fontWeight: '800' }} numberOfLines={1}>로스팅 {optionalDate(lot.roastDate)} · 구매 {optionalDate(lot.purchaseDate)}</Text>
+          <Text style={styles.small} numberOfLines={1}>남은 양 {remainingText(lot, logs)} · 기록 {lotLogs.length}회 · {freshness?.compactMeta ?? `개봉 ${optionalDate(lot.openedDate)}`}</Text>
         </View>
         <View style={{ alignItems: 'flex-end', gap: 6 }}>
           {!!freshness && <FreshnessBadge freshness={freshness} colors={colors} compact />}
@@ -534,7 +539,7 @@ function InventoryLotRow({
   const lotLogs = logs.filter(log => (log.purchaseLotId ?? log.beanId) === lot.id);
   const lastLog = lotLogs[0];
   const lastLogText = lastLog
-    ? `최근 ${lastLog.actualDoseGram ?? lastLog.doseGram ?? '-'}g -> ${lastLog.yieldGram ?? '-'}g · ${lastLog.brewSeconds ?? '-'}초`
+    ? `최근 도징 ${optionalGram(lastLog.actualDoseGram ?? lastLog.doseGram)} · 추출량 ${optionalGram(lastLog.yieldGram)} · 시간 ${lastLog.brewSeconds == null ? '미입력' : `${lastLog.brewSeconds}초`}`
     : '아직 추출 기록 없음';
   return (
     <TouchableOpacity onPress={onDetail} style={[styles.card, { marginBottom: 8, paddingVertical: 10, gap: 8 }]}>
@@ -1085,7 +1090,7 @@ export default function BeansScreen() {
     const title = '구매 이력 삭제';
     const message = [
       `${product?.name ?? '원두'} 구매분을 삭제할까요?`,
-      `구매일: ${lot.purchaseDate ?? '-'}`,
+      `구매일: ${optionalDate(lot.purchaseDate)}`,
       lotLogs.length ? `연결된 추출 기록 ${lotLogs.length}개도 함께 삭제됩니다.` : '연결된 추출 기록은 없습니다.',
       '이 작업은 되돌릴 수 없습니다.',
     ].join('\n');
@@ -1614,8 +1619,8 @@ export default function BeansScreen() {
                 {analysis && (
                   <View style={{ backgroundColor: colors.surface, borderRadius: 8, padding: 12, gap: 8 }}>
                     <Text style={{ color: colors.text, fontWeight: '900' }}>AI 분석 리뷰</Text>
-                    <Text style={styles.small}>제품: {analysis.bean_name ?? '-'} · {analysis.roastery ?? '-'} · {analysis.origin ?? analysis.process ?? '-'}</Text>
-                    <Text style={styles.small}>첫 구매분 후보: 구매 {analysis.purchase_date ?? '-'} · 로스팅 {analysis.roast_date ?? '-'} · 유통 {analysis.expiry_date ?? '-'} · 중량 {analysis.initial_weight_gram ?? analysis.weight ?? '-'}</Text>
+                    <Text style={styles.small}>제품: {optionalText(analysis.bean_name)} · {optionalText(analysis.roastery)} · {optionalText(analysis.origin ?? analysis.process)}</Text>
+                    <Text style={styles.small}>첫 구매분 후보: 구매 {optionalDate(analysis.purchase_date)} · 로스팅 {optionalDate(analysis.roast_date)} · 유통 {optionalDate(analysis.expiry_date)} · 중량 {optionalGram(analysis.initial_weight_gram ?? analysis.weight)}</Text>
                     {!!analysis.warnings?.length && <Text style={{ color: colors.danger, fontWeight: '800' }}>{analysis.warnings.join(', ')}</Text>}
                     {!!analysis.unknown_dates?.length && <Text style={styles.small}>애매한 날짜: {analysis.unknown_dates.map(item => item.rawText).join(', ')}</Text>}
                     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
@@ -1672,7 +1677,7 @@ export default function BeansScreen() {
               {analysis && (
                 <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 8, padding: 12, gap: 8 }}>
                   <Text style={{ color: colors.text, fontWeight: '900' }}>AI 분석 리뷰</Text>
-                  <Text style={styles.small}>구매일 {analysis.purchase_date ?? '-'} · 로스팅일 {analysis.roast_date ?? '-'} · 유통기한 {analysis.expiry_date ?? '-'} · 중량 {analysis.initial_weight_gram ?? analysis.weight ?? '-'}</Text>
+                  <Text style={styles.small}>구매일 {optionalDate(analysis.purchase_date)} · 로스팅일 {optionalDate(analysis.roast_date)} · 유통기한 {optionalDate(analysis.expiry_date)} · 중량 {optionalGram(analysis.initial_weight_gram ?? analysis.weight)}</Text>
                   {!!analysis.warnings?.length && <Text style={{ color: colors.danger, fontWeight: '800' }}>{analysis.warnings.join(', ')}</Text>}
                   <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                     <TouchableOpacity style={styles.button} onPress={() => applyAnalysis(false)}><Text style={styles.buttonText}>빈 칸에 적용</Text></TouchableOpacity>
@@ -1738,7 +1743,7 @@ export default function BeansScreen() {
           <View style={{ gap: 12 }}>
             <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 8, padding: 12, gap: 5 }}>
               <Text style={{ color: colors.text, fontWeight: '900' }}>{coffeeProducts.find(product => product.id === balanceAdjustLot.productId)?.name ?? '원두'}</Text>
-              <Text style={styles.small}>현재 표시 남은 양 {remainingText(balanceAdjustLot, logs)} · 시작 중량 {balanceAdjustLot.initialWeightGram == null ? '-' : `${balanceAdjustLot.initialWeightGram}g`}</Text>
+              <Text style={styles.small}>현재 표시 남은 양 {remainingText(balanceAdjustLot, logs)} · 시작 중량 {optionalGram(balanceAdjustLot.initialWeightGram)}</Text>
             </View>
             <Field
               label="현재 남은 양 g"
@@ -1944,13 +1949,13 @@ export default function BeansScreen() {
           <View style={{ gap: 10 }}>
             {[
               ['제품명', selectedProduct.name],
-              ['로스터리', selectedProduct.roastery || '-'],
-              ['산지', selectedProduct.origin || '-'],
-              ['품종', selectedProduct.variety || '-'],
-              ['가공', selectedProduct.process || '-'],
-              ['배전도', selectedProduct.roastLevel || '-'],
-              ['테이스팅 노트', selectedProduct.tastingNotes || '-'],
-              ['메모', selectedProduct.memo || '-'],
+              ['로스터리', optionalText(selectedProduct.roastery)],
+              ['산지', optionalText(selectedProduct.origin)],
+              ['품종', optionalText(selectedProduct.variety)],
+              ['가공', optionalText(selectedProduct.process)],
+              ['배전도', optionalText(selectedProduct.roastLevel)],
+              ['테이스팅 노트', optionalText(selectedProduct.tastingNotes)],
+              ['메모', optionalText(selectedProduct.memo)],
             ].map(([label, value]) => (
               <View key={label} style={{ borderBottomWidth: 1, borderBottomColor: colors.border, paddingBottom: 10 }}>
                 <Text style={styles.small}>{label}</Text>
@@ -2073,21 +2078,21 @@ export default function BeansScreen() {
                 {[
                   ['남은 양', remainingText(detailLot, logs)],
                   ['추출 기록', `${lotLogs.length}회`],
-                  ['보관', detailLot.storageType ?? '-'],
+                  ['보관', optionalText(detailLot.storageType)],
                 ].map(([label, value]) => <MetricChip key={label} label={label} value={value} colors={colors} />)}
               </View>
               <LotStatusActionBar lot={detailLot} colors={colors} onChangeStatus={status => changeLotStatus(detailLot, status)} />
               <View style={{ gap: 8 }}>
                 {[
-                  ['구매일', detailLot.purchaseDate ?? '-'],
-                  ['로스팅일', detailLot.roastDate ?? '-'],
-                  ['개봉일', detailLot.openedDate ?? '-'],
-                  ['유통기한', detailLot.expiryDate ?? '-'],
-                  ['구매처', detailLot.seller ?? '-'],
-                  ['가격', detailLot.price == null ? '-' : `${detailLot.price}`],
-                  ['시작 중량', detailLot.initialWeightGram == null ? '-' : `${detailLot.initialWeightGram}g`],
-                  ['남은 양 보정', detailLot.remainingWeightGram == null ? '-' : `${detailLot.remainingWeightGram}g`],
-                  ['메모', detailLot.lotMemo ?? '-'],
+                  ['구매일', optionalDate(detailLot.purchaseDate)],
+                  ['로스팅일', optionalDate(detailLot.roastDate)],
+                  ['개봉일', optionalDate(detailLot.openedDate)],
+                  ['유통기한', optionalDate(detailLot.expiryDate)],
+                  ['구매처', optionalText(detailLot.seller)],
+                  ['가격', optionalNumber(detailLot.price)],
+                  ['시작 중량', optionalGram(detailLot.initialWeightGram)],
+                  ['남은 양 보정', optionalGram(detailLot.remainingWeightGram)],
+                  ['메모', optionalText(detailLot.lotMemo)],
                 ].map(([label, value]) => (
                   <View key={label} style={{ borderBottomWidth: 1, borderBottomColor: colors.border, paddingBottom: 8 }}>
                     <Text style={styles.small}>{label}</Text>

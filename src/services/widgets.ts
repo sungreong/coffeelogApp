@@ -15,9 +15,9 @@ const statusLabel: Record<string, string> = {
   archived: '보관',
 };
 
-const formatGram = (value: number | null | undefined) => value == null ? '-' : `${Math.round(value * 10) / 10}g`;
-const formatSeconds = (value: number | null | undefined) => value == null ? '-' : `${value}초`;
-const formatRating = (value: number | null | undefined) => value == null ? '-' : `${Math.round(value * 10) / 10}점`;
+const formatGram = (value: number | null | undefined) => value == null ? '미입력' : `${Math.round(value * 10) / 10}g`;
+const formatSeconds = (value: number | null | undefined) => value == null ? '시간 미입력' : `${value}초`;
+const formatRating = (value: number | null | undefined) => value == null ? '평점 미입력' : `${Math.round(value * 10) / 10}점`;
 
 const sortByDateDesc = <T extends { updatedAt?: string; createdAt?: string }>(items: T[]) =>
   [...items].sort((a, b) => (b.updatedAt ?? b.createdAt ?? '').localeCompare(a.updatedAt ?? a.createdAt ?? ''));
@@ -66,7 +66,7 @@ export const syncCoffeeWidgets = async (state: {
       freshness: freshness?.title ?? '로스팅일 미입력',
       freshnessDetail: freshness?.detail ?? '',
       remaining: formatGram(usage?.displayRemaining),
-      estimatedCups: usage?.estimatedCups == null ? '-' : `${usage.estimatedCups}잔`,
+      estimatedCups: usage?.estimatedCups == null ? '입력값 부족' : `${usage.estimatedCups}잔`,
       logCount: activeLogs.length,
     } : null,
     recentBrew: recentLog ? {

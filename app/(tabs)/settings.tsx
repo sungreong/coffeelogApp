@@ -282,7 +282,7 @@ export default function SettingsScreen() {
           <Text style={{ color: colors.text, fontWeight: '900' }}>기본 기록 모드</Text>
           <Text style={styles.subtitle}>사용자 실력이 아니라 이번 기록의 깊이입니다. 기록 화면에서도 매번 바꿀 수 있습니다.</Text>
           {[
-            ['quick', '빠른 기록', '도징량/수율/시간 중심'],
+            ['quick', '빠른 기록', '도징량/추출량/시간 중심'],
             ['guided', '가이드 기록', 'BES876 핵심 게이지 포함'],
             ['precision', '상세 기록', '모든 변수 열기'],
           ].map(([value, label, description]) => (
@@ -311,7 +311,7 @@ export default function SettingsScreen() {
           <Text style={styles.subtitle}>기록 중 헷갈리는 단어만 ? 아이콘으로 짧게 확인합니다. 숨겨도 저장 기능에는 영향이 없습니다.</Text>
           {([
             ['off', '숨김', '기본 화면에서 물음표를 보이지 않음'],
-            ['minimal', '핵심만', '분쇄도/도징량/수율/시간만 표시'],
+            ['minimal', '핵심만', '분쇄도/도징량/추출량/시간만 표시'],
             ['recommended', '추천 표시', 'Guided 중심으로 필요한 용어 표시'],
             ['full', '전체 표시', '지원되는 용어를 최대한 표시'],
           ] as Array<[TermHelpVisibility, string, string]>).map(([value, label, description]) => (

@@ -78,20 +78,20 @@ const doseLevelOptions = [
   ['ideal', 'Ideal'],
   ['a_bit_more', 'A Bit More'],
   ['over', 'Over'],
-  ['unknown', '모름'],
+  ['unknown', '기록 안 함'],
 ] as const;
 const pressureOptions = [
   ['low', '낮음'],
   ['espresso_range', '에스프레소 범위'],
   ['high', '높음'],
-  ['unknown', '모름'],
+  ['unknown', '기록 안 함'],
 ] as const;
 const nextActionOptions = [
   ['keep', '유지'],
   ['grind_finer', '더 곱게'],
   ['grind_coarser', '더 굵게'],
-  ['increase_yield', '수율 증가'],
-  ['decrease_yield', '수율 감소'],
+  ['increase_yield', '추출량 늘리기'],
+  ['decrease_yield', '추출량 줄이기'],
   ['increase_dose', '도징 증가'],
   ['decrease_dose', '도징 감소'],
 ] as const;
@@ -104,7 +104,29 @@ const timeSourceOptions = [
 ] as const;
 const timeSourceLabel = (source: TimeMeasurementSource) => timeSourceOptions.find(([value]) => value === source)?.[1] ?? '직접 입력';
 const timeSourceAfterManualEdit = (source: TimeMeasurementSource) => source === 'in_app_timer' || source === 'estimated' ? 'manual' : source;
-const compactSeconds = (value: number | null) => value == null ? '-' : `${value}초`;
+const compactSeconds = (value: number | null | undefined) => value == null ? '기록 없음' : `${Math.round(value * 10) / 10}초`;
+const optionalDateText = (value: string | null | undefined) => value ?? '미입력';
+const optionalText = (value: string | null | undefined) => value?.trim() || '미입력';
+const doseLevelDisplay: Record<string, string> = {
+  under: '적음',
+  ideal: '적정',
+  a_bit_more: 'A Bit More',
+  over: '많음',
+};
+const pressureZoneDisplay: Record<string, string> = {
+  low: '낮음',
+  espresso_range: '적정 범위',
+  high: '높음',
+};
+const advancedLogText = (log: BrewLog) => {
+  const parts = [
+    log.firstDripSeconds != null ? `첫 방울 ${compactSeconds(log.firstDripSeconds)}` : null,
+    log.preinfusionSeconds != null ? `프리 ${compactSeconds(log.preinfusionSeconds)}` : null,
+    log.pressureZone && log.pressureZone !== 'unknown' ? `압력 ${pressureZoneDisplay[log.pressureZone] ?? log.pressureZone}` : null,
+    log.doseLevel && log.doseLevel !== 'unknown' ? `도즈 ${doseLevelDisplay[log.doseLevel] ?? log.doseLevel}` : null,
+  ].filter(Boolean);
+  return parts.length ? parts.join(' · ') : '추가 기록 없음';
+};
 
 const isBes876Equipment = (equipment?: { name?: string | null; model?: string | null; brand?: string | null } | null) => {
   const text = [equipment?.name, equipment?.model, equipment?.brand].filter(Boolean).join(' ').toUpperCase();
@@ -122,12 +144,12 @@ const photoGuide = [
   { type: 'dose_gauge', stage: 'After Dosing', label: '도즈 게이지', need: '추천', place: '탬핑 후 Under/Ideal/A Bit More 표시', why: 'AUTO 도징 판단의 핵심입니다.' },
   { type: 'tamped_puck', stage: 'After Dosing', label: '탬핑 후 퍽', need: '선택', place: '포터필터 안 퍽 표면', why: 'Razor 트리밍과 수평 탬핑을 봅니다.' },
   { type: 'pressure_gauge', stage: 'Extraction', label: '압력 게이지', need: '추천', place: '추출 피크 때 중앙 게이지', why: '낮음/정상/높음 압력을 비교합니다.' },
-  { type: 'espresso_result', stage: 'Extraction', label: '추출 컵', need: '추천', place: '컵의 크레마와 양', why: '색, 흐름, 수율 변화를 비교합니다.' },
+  { type: 'espresso_result', stage: 'Extraction', label: '추출 컵', need: '추천', place: '컵의 크레마와 양', why: '색, 흐름, 추출량 변화를 비교합니다.' },
   { type: 'spent_puck', stage: 'After Shot', label: '사용 후 퍽', need: '선택', place: '추출 후 퍽 표면', why: '균열, 물기, 채널링 흔적이 있을 때 남깁니다.' },
   { type: 'clean_descale_light', stage: 'Maintenance', label: 'CLEAN/DESCALE 등', need: '선택', place: '머신 전면 상태등', why: '세척/디스케일 알림을 헷갈릴 때 남깁니다.' },
 ] as const;
 const recordingModes = [
-  ['quick', 'Quick', '도징량/수율/시간만 빠르게'],
+  ['quick', 'Quick', '도징량/추출량/시간만 빠르게'],
   ['guided', 'Guided', 'BES876 핵심 게이지까지'],
   ['precision', 'Precision', '모든 변수 열기'],
 ] as const;
@@ -161,7 +183,7 @@ const suggestedStart: Record<NumberKey, number> = {
   body: 3,
 };
 
-const displayNumber = (value: number | null, unit: string) => value == null ? '모름' : `${value}${unit}`;
+const displayNumber = (value: number | null, unit: string) => value == null ? '미입력' : `${value}${unit}`;
 
 type PhotoSource = 'camera' | 'library';
 type PendingPhoto = { uri: string; type: BrewPhotoType | 'etc'; createdAt: string; isPrimary?: boolean };
@@ -208,9 +230,9 @@ const expiryText = (date?: string | null) => {
   return `유통기한 D-${days}`;
 };
 
-const gramText = (value: number | null | undefined) => value == null ? '-' : `${value}g`;
+const gramText = (value: number | null | undefined) => value == null ? '미입력' : `${value}g`;
 
-const formatGram = (value: number | null | undefined) => value == null ? '-' : `${Math.round(value * 10) / 10}g`;
+const formatGram = (value: number | null | undefined) => value == null ? '미입력' : `${Math.round(value * 10) / 10}g`;
 
 const lotIndexText = (bean: Bean, beans: Bean[]) => {
   if (!bean.productId) return '구매분';
@@ -233,6 +255,8 @@ function CoreNumberInput({
   returnKeyType,
   onSubmitEditing,
   blurOnSubmit,
+  danger,
+  helper,
 }: {
   label: string;
   value: number | null;
@@ -245,15 +269,17 @@ function CoreNumberInput({
   returnKeyType?: React.ComponentProps<typeof TextInput>['returnKeyType'];
   onSubmitEditing?: () => void;
   blurOnSubmit?: boolean;
+  danger?: boolean;
+  helper?: string | null;
 }) {
   const styles = createCommonStyles(colors);
   return (
     <View style={{ flex: 1, minWidth: 130 }}>
-      <TermLabel label={label} glossaryId={glossaryId} recordingMode={recordingMode} colors={colors} />
+      <TermLabel label={label} glossaryId={glossaryId} recordingMode={recordingMode} colors={colors} textStyle={danger ? { color: colors.danger } : undefined} />
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
         <TextInput
           ref={inputRef}
-          style={[styles.input, { flex: 1, minHeight: 44, paddingVertical: 8 }]}
+          style={[styles.input, { flex: 1, minHeight: 44, paddingVertical: 8 }, danger && { borderColor: colors.danger }]}
           keyboardType="decimal-pad"
           returnKeyType={returnKeyType}
           onSubmitEditing={onSubmitEditing}
@@ -273,6 +299,7 @@ function CoreNumberInput({
         />
         {!!unit && <Text style={{ color: colors.textSecondary, fontWeight: '800' }}>{unit}</Text>}
       </View>
+      {!!helper && <Text style={[styles.small, { marginTop: 4 }, danger && { color: colors.danger, fontWeight: '800' }]}>{helper}</Text>}
     </View>
   );
 }
@@ -410,7 +437,7 @@ export default function LogScreen() {
   const [balanceDraft, setBalanceDraft] = useState('');
   const [photoSheetOpen, setPhotoSheetOpen] = useState(false);
   const [photoAiBusy, setPhotoAiBusy] = useState(false);
-  const [aiAdviceQuestion, setAiAdviceQuestion] = useState('다음 샷에서 분쇄도, 도징량, 수율, 시간 중 무엇을 먼저 바꾸면 좋을까?');
+  const [aiAdviceQuestion, setAiAdviceQuestion] = useState('다음 샷에서 분쇄도, 도징량, 추출량, 시간 중 무엇을 먼저 바꾸면 좋을까?');
   const [filter, setFilter] = useState<'all' | 'favorite' | 'high'>('all');
   const [drinkFilter, setDrinkFilter] = useState('all');
   const [visibleLogCount, setVisibleLogCount] = useState(10);
@@ -452,11 +479,13 @@ export default function LogScreen() {
     },
   ];
   const editingLog = editingLogId ? logs.find(log => log.id === editingLogId) ?? null : null;
-  const currentDoseForUsage = form.actualDoseGram ?? form.doseGram ?? usageInfo?.doseBasis ?? 18;
+  const currentDoseForUsage = form.actualDoseGram ?? form.doseGram ?? null;
+  const doseMissingForInventory = currentDoseForUsage == null || currentDoseForUsage <= 0;
   const previousDoseForEdit = editingLog?.actualDoseGram ?? editingLog?.doseGram ?? 0;
   const usageDelta = editingLog ? (currentDoseForUsage ?? 0) - previousDoseForEdit : (currentDoseForUsage ?? 0);
   const remainingAfterThisShot = usageInfo?.displayRemaining == null ? null : Math.max(0, usageInfo.displayRemaining - usageDelta);
   const estimatedCupsAfterThisShot = remainingAfterThisShot == null || !currentDoseForUsage ? null : Math.floor(remainingAfterThisShot / currentDoseForUsage);
+  const doseMissingInventoryText = '도징량을 입력해야 남은 원두가 줄어듭니다.';
   const effectiveProductKey = selectedProductKey ?? bean?.productId ?? bean?.id ?? null;
   const productLots = useMemo(
     () => effectiveProductKey ? beans.filter(item => (item.productId ?? item.id) === effectiveProductKey) : [],
@@ -884,7 +913,7 @@ export default function LogScreen() {
       const applied = [
         parsed.grind_size_external != null ? '분쇄도' : null,
         parsed.actual_dose_gram != null ? '도징량' : null,
-        parsed.yield_gram != null ? '수율' : null,
+        parsed.yield_gram != null ? '추출량' : null,
         parsed.brew_seconds != null ? '시간' : null,
         parsed.dose_level ? '도즈 레벨' : null,
         parsed.pressure_zone ? '압력 구간' : null,
@@ -997,7 +1026,7 @@ export default function LogScreen() {
     );
   };
 
-  const save = async (skipRemainingWarning = false) => {
+  const save = async (options: { skipRemainingWarning?: boolean; skipMissingDoseWarning?: boolean } = {}) => {
     if (!bean) {
       Alert.alert('원두 필요', '먼저 원두를 등록하세요.');
       return;
@@ -1010,14 +1039,26 @@ export default function LogScreen() {
       ]);
       return;
     }
-    if (!skipRemainingWarning && usageInfo?.displayRemaining != null && currentDoseForUsage > usageInfo.displayRemaining) {
+    if (!options.skipMissingDoseWarning && doseMissingForInventory) {
+      Alert.alert(
+        '도징량이 필요합니다',
+        '도징량이 비어 있으면 기록은 저장돼도 남은 양이 줄어들지 않습니다. 이번 샷에 사용한 원두 g을 입력하세요.',
+        [
+          { text: '취소' },
+          { text: '차감 없이 저장', onPress: () => void save({ ...options, skipMissingDoseWarning: true }) },
+          { text: '도징량 입력', onPress: () => { setEditorOpen(true); setTimeout(() => doseInputRef.current?.focus?.(), 120); } },
+        ]
+      );
+      return;
+    }
+    if (!options.skipRemainingWarning && usageInfo?.displayRemaining != null && (currentDoseForUsage ?? 0) > usageInfo.displayRemaining) {
       Alert.alert(
         '잔량보다 도징량이 큽니다',
         `현재 남은 양은 ${formatGram(usageInfo.displayRemaining)}이고 이번 도징량은 ${formatGram(currentDoseForUsage)}입니다. 저장하면 남은 양이 0g으로 처리될 수 있습니다.`,
         [
           { text: '취소' },
           { text: '잔량 설정', onPress: openBalanceAdjustment },
-          { text: '저장하고 0g 처리', onPress: () => void save(true) },
+          { text: '저장하고 0g 처리', onPress: () => void save({ ...options, skipRemainingWarning: true }) },
         ]
       );
       return;
@@ -1070,19 +1111,20 @@ export default function LogScreen() {
       </View>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
         <CoreNumberInput label="분쇄도" glossaryId="grind_size" recordingMode={recordingMode} value={form.grindSizeExternal} unit="1-25" colors={colors} inputRef={grindInputRef} returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => doseInputRef.current?.focus?.()} onChange={grindSizeExternal => setForm(prev => ({ ...prev, grindSizeExternal }))} />
-        <CoreNumberInput label="도징량" glossaryId="dose" recordingMode={recordingMode} value={form.actualDoseGram} unit="g" colors={colors} inputRef={doseInputRef} returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => yieldInputRef.current?.focus?.()} onChange={actualDoseGram => setForm(prev => ({ ...prev, actualDoseGram }))} />
-        <CoreNumberInput label="수율" glossaryId="yield" recordingMode={recordingMode} value={form.yieldGram} unit="g" colors={colors} inputRef={yieldInputRef} returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => timeInputRef.current?.focus?.()} onChange={yieldGram => setForm(prev => ({ ...prev, yieldGram }))} />
+        <CoreNumberInput label="도징량" glossaryId="dose" recordingMode={recordingMode} value={form.actualDoseGram} unit="g" colors={colors} inputRef={doseInputRef} returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => yieldInputRef.current?.focus?.()} danger={doseMissingForInventory} helper={doseMissingForInventory ? doseMissingInventoryText : null} onChange={actualDoseGram => setForm(prev => ({ ...prev, actualDoseGram }))} />
+        <CoreNumberInput label="추출량" glossaryId="yield" recordingMode={recordingMode} value={form.yieldGram} unit="g" colors={colors} inputRef={yieldInputRef} returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => timeInputRef.current?.focus?.()} onChange={yieldGram => setForm(prev => ({ ...prev, yieldGram }))} />
         <CoreNumberInput label="시간" glossaryId="brew_time" recordingMode={recordingMode} value={form.brewSeconds} unit="초" colors={colors} inputRef={timeInputRef} returnKeyType="done" onChange={brewSeconds => setTimingValue('brewSeconds', brewSeconds)} />
       </View>
       <View style={{ backgroundColor: colors.surface, borderRadius: 8, padding: 10, gap: 6 }}>
         <Text style={styles.small}>
           {editingLog
             ? `현재 ${formatGram(usageInfo?.displayRemaining)} · 기존 ${formatGram(previousDoseForEdit)} -> 새 ${formatGram(currentDoseForUsage)} · 저장 후 ${formatGram(remainingAfterThisShot)}`
-            : `현재 ${formatGram(usageInfo?.displayRemaining)} · 이번 사용 ${formatGram(currentDoseForUsage)} · 저장 후 ${formatGram(remainingAfterThisShot)} · 약 ${estimatedCupsAfterThisShot ?? '-'}잔`}
+            : `현재 ${formatGram(usageInfo?.displayRemaining)} · 이번 사용 ${formatGram(currentDoseForUsage)} · 저장 후 ${formatGram(remainingAfterThisShot)} · 약 ${estimatedCupsAfterThisShot ?? '입력값 부족'}잔`}
         </Text>
         {bean && editingLog && (
           <Text style={[styles.small, { color: colors.primary, fontWeight: '800' }]}>저장 영향: {inventoryImpactMessage(bean)}</Text>
         )}
+        {doseMissingForInventory && <Text style={{ color: colors.danger, fontSize: 12, fontWeight: '900' }}>{doseMissingInventoryText}</Text>}
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
           <TouchableOpacity style={styles.ghostButton} onPress={() => setTimerOpen(true)}>
             <MaterialIcons name="timer" size={18} color={colors.text} />
@@ -1182,7 +1224,7 @@ export default function LogScreen() {
                 {bean ? `${lotIndexText(bean, beans)} · ${lotStatusLabel[bean.lotStatus] ?? bean.lotStatus} · 남은 양 ${formatGram(usageInfo?.displayRemaining)}` : '구매분 선택'}
               </Text>
               <Text style={styles.small} numberOfLines={1}>
-                {bean ? `구매 ${bean.purchaseDate ?? '-'} · 로스팅 ${bean.roastDate ?? '-'} · 개봉 ${bean.openedDate ?? '-'}` : '날짜, 개봉 여부, 남은 양을 보고 선택합니다'}
+                {bean ? `구매 ${optionalDateText(bean.purchaseDate)} · 로스팅 ${optionalDateText(bean.roastDate)} · 개봉 ${optionalDateText(bean.openedDate)}` : '날짜, 개봉 여부, 남은 양을 보고 선택합니다'}
               </Text>
             </View>
             <MaterialIcons name="keyboard-arrow-down" size={22} color={colors.textSecondary} />
@@ -1199,8 +1241,9 @@ export default function LogScreen() {
               <Text style={styles.small}>
                 {editingLog
                   ? `현재 ${formatGram(usageInfo?.displayRemaining)} · 기존 ${formatGram(previousDoseForEdit)} -> 새 ${formatGram(currentDoseForUsage)} · 저장 후 ${formatGram(remainingAfterThisShot)}`
-                  : `현재 ${formatGram(usageInfo?.displayRemaining)} · 이번 사용 ${formatGram(currentDoseForUsage)} · 저장 후 ${formatGram(remainingAfterThisShot)} · 약 ${estimatedCupsAfterThisShot ?? '-'}잔`}
+                  : `현재 ${formatGram(usageInfo?.displayRemaining)} · 이번 사용 ${formatGram(currentDoseForUsage)} · 저장 후 ${formatGram(remainingAfterThisShot)} · 약 ${estimatedCupsAfterThisShot ?? '입력값 부족'}잔`}
               </Text>
+              {doseMissingForInventory && <Text style={{ color: colors.danger, fontWeight: '900', fontSize: 12 }}>{doseMissingInventoryText}</Text>}
               {editingLog && (editingLog.purchaseLotId ?? editingLog.beanId) !== bean.id && <Text style={{ color: colors.danger, fontWeight: '800', fontSize: 12 }}>수정 중 구매분이 바뀌었습니다. 기존 구매분과 새 구매분의 사용량 영향이 달라집니다.</Text>}
               {usageInfo?.manualOverride && <Text style={styles.small}>현재 잔량은 수동 보정 후 기록 저장/수정에 따라 자동 차감됩니다.</Text>}
             </View>
@@ -1256,12 +1299,12 @@ export default function LogScreen() {
               </View>
               <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 8, padding: 10, gap: 4 }}>
                 <Text style={{ color: colors.text, fontWeight: '900' }}>상태 {lotStatusLabel[bean.lotStatus] ?? bean.lotStatus}</Text>
-                <Text style={styles.small}>구매 {bean.purchaseDate ?? '-'} · 로스팅 {bean.roastDate ?? '-'} · 개봉 {bean.openedDate ?? '-'} · 만료 {bean.expiryDate ?? '-'}</Text>
+                <Text style={styles.small}>구매 {optionalDateText(bean.purchaseDate)} · 로스팅 {optionalDateText(bean.roastDate)} · 개봉 {optionalDateText(bean.openedDate)} · 만료 {optionalDateText(bean.expiryDate)}</Text>
                 <Text style={{ color: colors.primary, fontWeight: '800' }}>{lotAge('로스팅', bean.roastDate)} · {lotAge('개봉', bean.openedDate)}</Text>
-                <Text style={styles.small}>{expiryText(bean.expiryDate)} · 구매처 {bean.seller ?? '-'}</Text>
+                <Text style={styles.small}>{expiryText(bean.expiryDate)} · 구매처 {optionalText(bean.seller)}</Text>
                 <Text style={styles.small}>시작 {gramText(bean.initialWeightGram)} · 기록 사용 {formatGram(usageInfo?.usedGram)} · 현재 남은 양 {formatGram(usageInfo?.displayRemaining)}</Text>
                 <Text style={{ color: colors.text, fontWeight: '800' }}>
-                  {editingLog ? `수정 후 예상 ${formatGram(remainingAfterThisShot)} · 사용량 변화 ${usageDelta >= 0 ? '-' : '+'}${formatGram(Math.abs(usageDelta))}` : `이번 도징 ${formatGram(currentDoseForUsage)} 저장 후 예상 ${formatGram(remainingAfterThisShot)} · 약 ${estimatedCupsAfterThisShot ?? '-'}잔`}
+                  {editingLog ? `수정 후 예상 ${formatGram(remainingAfterThisShot)} · 사용량 변화 ${usageDelta >= 0 ? '-' : '+'}${formatGram(Math.abs(usageDelta))}` : `이번 도징 ${formatGram(currentDoseForUsage)} 저장 후 예상 ${formatGram(remainingAfterThisShot)} · 약 ${estimatedCupsAfterThisShot ?? '입력값 부족'}잔`}
                 </Text>
                 {usageInfo?.manualOverride && <Text style={styles.small}>남은 양은 수동 보정 후 기록 저장/수정에 따라 자동 차감됩니다.</Text>}
               </View>
@@ -1279,11 +1322,11 @@ export default function LogScreen() {
             <Text style={{ color: colors.text, fontWeight: '900', fontSize: 18 }}>핵심 입력</Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
               <CoreNumberInput label="분쇄도" glossaryId="grind_size" recordingMode={recordingMode} value={form.grindSizeExternal} unit="1-25" colors={colors} inputRef={grindInputRef} returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => doseInputRef.current?.focus?.()} onChange={grindSizeExternal => setForm(prev => ({ ...prev, grindSizeExternal }))} />
-              <CoreNumberInput label="도징량" glossaryId="dose" recordingMode={recordingMode} value={form.actualDoseGram} unit="g" colors={colors} inputRef={doseInputRef} returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => yieldInputRef.current?.focus?.()} onChange={actualDoseGram => setForm(prev => ({ ...prev, actualDoseGram }))} />
-              <CoreNumberInput label="수율" glossaryId="yield" recordingMode={recordingMode} value={form.yieldGram} unit="g" colors={colors} inputRef={yieldInputRef} returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => timeInputRef.current?.focus?.()} onChange={yieldGram => setForm(prev => ({ ...prev, yieldGram }))} />
+              <CoreNumberInput label="도징량" glossaryId="dose" recordingMode={recordingMode} value={form.actualDoseGram} unit="g" colors={colors} inputRef={doseInputRef} returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => yieldInputRef.current?.focus?.()} danger={doseMissingForInventory} helper={doseMissingForInventory ? doseMissingInventoryText : null} onChange={actualDoseGram => setForm(prev => ({ ...prev, actualDoseGram }))} />
+              <CoreNumberInput label="추출량" glossaryId="yield" recordingMode={recordingMode} value={form.yieldGram} unit="g" colors={colors} inputRef={yieldInputRef} returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => timeInputRef.current?.focus?.()} onChange={yieldGram => setForm(prev => ({ ...prev, yieldGram }))} />
               <CoreNumberInput label="시간" glossaryId="brew_time" recordingMode={recordingMode} value={form.brewSeconds} unit="초" colors={colors} inputRef={timeInputRef} returnKeyType="done" onChange={brewSeconds => setTimingValue('brewSeconds', brewSeconds)} />
             </View>
-            <Text style={styles.small}>분쇄도, 도징량, 수율, 시간은 다이얼인 핵심값이라 항상 바로 입력할 수 있습니다.</Text>
+            <Text style={styles.small}>분쇄도, 도징량, 추출량, 시간은 다이얼인 핵심값이라 항상 바로 입력할 수 있습니다.</Text>
             <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 8, padding: 10, gap: 8 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                 <View style={{ flex: 1, minWidth: 170 }}>
@@ -1342,7 +1385,7 @@ export default function LogScreen() {
                   textStyle={{ color: colors.text, fontSize: 20, fontWeight: '800' }}
                   containerStyle={{ marginTop: 22, marginBottom: 10 }}
                 />
-                <Text style={styles.subtitle}>AUTO/MANUAL은 추출 방식보다 도징량을 잡는 방식입니다. 수율은 반드시 저울로 따로 기록하세요.</Text>
+                <Text style={styles.subtitle}>AUTO/MANUAL은 추출 방식보다 도징량을 잡는 방식입니다. 추출량은 반드시 저울로 따로 기록하세요.</Text>
                 <View style={{ flexDirection: 'row', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
                   <Chip label="AUTO 도징" active={form.doseMode === 'auto'} colors={colors} onPress={() => setForm(prev => ({ ...prev, doseMode: 'auto' }))} />
                   <Chip label="MANUAL 도징" active={form.doseMode === 'manual'} colors={colors} onPress={() => setForm(prev => ({ ...prev, doseMode: 'manual' }))} />
@@ -1395,7 +1438,7 @@ export default function LogScreen() {
                   <TouchableOpacity style={styles.ghostButton} onPress={() => adjust(key as NumberKey, -(step as number))}><MaterialIcons name="remove" size={20} color={colors.text} /></TouchableOpacity>
                   <Text style={{ color: colors.text, fontSize: 24, fontWeight: '900', minWidth: 86, textAlign: 'center' }}>{displayNumber(form[key as NumberKey], unit as string)}</Text>
                   <TouchableOpacity style={styles.ghostButton} onPress={() => adjust(key as NumberKey, step as number)}><MaterialIcons name="add" size={20} color={colors.text} /></TouchableOpacity>
-                  <TouchableOpacity style={styles.ghostButton} onPress={() => markUnknown(key as NumberKey)}><Text style={styles.ghostText}>모름</Text></TouchableOpacity>
+                  <TouchableOpacity style={styles.ghostButton} onPress={() => markUnknown(key as NumberKey)}><Text style={styles.ghostText}>비우기</Text></TouchableOpacity>
                 </View>
               ))}
             </View>
@@ -1477,7 +1520,7 @@ export default function LogScreen() {
                   <TouchableOpacity style={styles.ghostButton} onPress={() => adjust(key as NumberKey, -(step as number))}><MaterialIcons name="remove" size={20} color={colors.text} /></TouchableOpacity>
                   <Text style={{ color: colors.text, fontSize: 24, fontWeight: '900', minWidth: 86, textAlign: 'center' }}>{displayNumber(form[key as NumberKey], unit as string)}</Text>
                   <TouchableOpacity style={styles.ghostButton} onPress={() => adjust(key as NumberKey, step as number)}><MaterialIcons name="add" size={20} color={colors.text} /></TouchableOpacity>
-                  <TouchableOpacity style={styles.ghostButton} onPress={() => markUnknown(key as NumberKey)}><Text style={styles.ghostText}>모름</Text></TouchableOpacity>
+                  <TouchableOpacity style={styles.ghostButton} onPress={() => markUnknown(key as NumberKey)}><Text style={styles.ghostText}>비우기</Text></TouchableOpacity>
                 </View>
               ))}
             </View></>}
@@ -1502,9 +1545,9 @@ export default function LogScreen() {
               <View key={key} style={[styles.between, { marginBottom: 8 }]}>
                 <Text style={{ color: colors.text, fontWeight: '800', width: 56 }}>{label}</Text>
                 <TouchableOpacity style={styles.ghostButton} onPress={() => adjust(key as NumberKey, -0.5, 0, 5)}><MaterialIcons name="remove" size={18} color={colors.text} /></TouchableOpacity>
-                <Text style={{ color: colors.primary, fontWeight: '900', fontSize: 20, minWidth: 44, textAlign: 'center' }}>{form[key as NumberKey] ?? '모름'}</Text>
+                <Text style={{ color: colors.primary, fontWeight: '900', fontSize: 20, minWidth: 44, textAlign: 'center' }}>{form[key as NumberKey] ?? '미입력'}</Text>
                 <TouchableOpacity style={styles.ghostButton} onPress={() => adjust(key as NumberKey, 0.5, 0, 5)}><MaterialIcons name="add" size={18} color={colors.text} /></TouchableOpacity>
-                <TouchableOpacity style={styles.ghostButton} onPress={() => markUnknown(key as NumberKey)}><Text style={styles.ghostText}>모름</Text></TouchableOpacity>
+                <TouchableOpacity style={styles.ghostButton} onPress={() => markUnknown(key as NumberKey)}><Text style={styles.ghostText}>비우기</Text></TouchableOpacity>
               </View>
             ))}
 
@@ -1546,7 +1589,7 @@ export default function LogScreen() {
                   multiline
                   value={aiAdviceQuestion}
                   onChangeText={setAiAdviceQuestion}
-                  placeholder="예: 다음 샷에서 분쇄도를 바꿀지 수율을 바꿀지 판단해줘."
+                  placeholder="예: 다음 샷에서 분쇄도를 바꿀지 추출량을 바꿀지 판단해줘."
                   placeholderTextColor={colors.textTertiary}
                 />
                 <Text style={styles.small}>히스토리의 기록을 선택하면 원두 상태와 최근 기록을 묶어 프롬프트를 만듭니다.</Text>
@@ -1591,6 +1634,8 @@ export default function LogScreen() {
           {visibleLogs.map((log: BrewLog) => {
             const expanded = !!expandedLogIds[log.id];
             const lotForLog = beans.find(item => item.id === (log.purchaseLotId ?? log.beanId));
+            const logDoseForInventory = log.actualDoseGram ?? log.doseGram;
+            const logMissingInventoryDose = logDoseForInventory == null || logDoseForInventory <= 0;
             const savedPhotos = photosByLog[log.id] ?? [];
             const displayPhotoUris = [
               ...savedPhotos.map(photo => ({ id: photo.id, uri: photo.photoUri, type: photo.photoType, saved: true })),
@@ -1599,12 +1644,13 @@ export default function LogScreen() {
             return (
             <View key={log.id} style={[styles.card, { gap: 8, marginBottom: 10 }]}>
               <LogSummary log={log} colors={colors} compact />
+              {logMissingInventoryDose && <Text style={{ color: colors.danger, fontSize: 12, fontWeight: '900' }}>도징량 미입력 · 잔량 미반영</Text>}
               {editorOpen && inlineEditorLogId === log.id && renderInlineBrewEditor()}
               {expanded && (
                 <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 8, padding: 10, gap: 6 }}>
                   <Text style={{ color: colors.text, fontWeight: '900' }}>상세</Text>
                   <Text style={styles.small}>구매분: {lotForLog ? `${lotIndexText(lotForLog, beans)} · ${lotStatusLabel[lotForLog.lotStatus] ?? lotForLog.lotStatus} · 남은 양 ${formatGram(getUsageInfo(lotForLog, logs, settingsByBean[lotForLog.id])?.displayRemaining)}` : '연결된 구매분 없음'}</Text>
-                  <Text style={styles.small}>고급값: 첫 방울 {compactSeconds(log.firstDripSeconds)} · 프리 {compactSeconds(log.preinfusionSeconds)} · 압력 {log.pressureZone ?? '-'} · 도즈 {log.doseLevel ?? '-'}</Text>
+                  <Text style={styles.small}>고급값: {advancedLogText(log)}</Text>
                   <Text style={styles.small}>재고 변화: 사용 {formatGram(log.actualDoseGram ?? log.doseGram)} · 기록 당시 구매분 기준</Text>
                   {displayPhotoUris.length > 0 && (
                     <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -1662,7 +1708,7 @@ export default function LogScreen() {
           {filtered.length === 0 && (
             <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 8, padding: 12, gap: 8, marginBottom: 10 }}>
               <Text style={{ color: colors.text, fontWeight: '900' }}>{beanLogs.length === 0 ? '이 구매분 기록이 아직 없습니다' : '현재 필터에 해당하는 기록이 없습니다'}</Text>
-              <Text style={styles.small}>{beanLogs.length === 0 ? '분쇄도, 도징량, 수율, 시간을 먼저 남기면 다음 추출 비교가 쉬워집니다.' : '필터를 전체로 바꾸면 숨겨진 기록을 다시 볼 수 있습니다.'}</Text>
+              <Text style={styles.small}>{beanLogs.length === 0 ? '분쇄도, 도징량, 추출량, 시간을 먼저 남기면 다음 추출 비교가 쉬워집니다.' : '필터를 전체로 바꾸면 숨겨진 기록을 다시 볼 수 있습니다.'}</Text>
               {beanLogs.length === 0 && (
                 <TouchableOpacity style={[styles.button, { alignSelf: 'flex-start' }]} onPress={() => { resetDraft(); setEditorOpen(true); setInlineEditorLogId(null); }}>
                   <MaterialIcons name="add" size={18} color="#fff" />
@@ -1671,7 +1717,7 @@ export default function LogScreen() {
               )}
             </View>
           )}
-          <Text style={styles.small}>모르는 값은 모름으로 남기면 저장 시 빈 값으로 보존됩니다. 타이머 탭에서 잰 값은 {form.brewSeconds == null ? '모름' : formatSeconds(form.brewSeconds)} 형식으로 이 화면에 직접 입력할 수 있습니다.</Text>
+          <Text style={styles.small}>확실하지 않은 값은 비워두면 됩니다. 타이머 탭에서 잰 값은 {form.brewSeconds == null ? '아직 없음' : formatSeconds(form.brewSeconds)} 형식으로 이 화면에 직접 입력할 수 있습니다.</Text>
           </>
         </View>
       </View>
@@ -1690,16 +1736,16 @@ export default function LogScreen() {
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
               {[
                 ['상태', lotStatusLabel[bean.lotStatus] ?? bean.lotStatus],
-                ['구매일', bean.purchaseDate ?? '-'],
-                ['로스팅일', bean.roastDate ?? '-'],
-                ['개봉일', bean.openedDate ?? '-'],
-                ['유통기한', bean.expiryDate ?? '-'],
-                ['구매처', bean.seller ?? '-'],
+                ['구매일', optionalDateText(bean.purchaseDate)],
+                ['로스팅일', optionalDateText(bean.roastDate)],
+                ['개봉일', optionalDateText(bean.openedDate)],
+                ['유통기한', optionalDateText(bean.expiryDate)],
+                ['구매처', optionalText(bean.seller)],
                 ['시작 중량', gramText(bean.initialWeightGram)],
                 ['기록 사용', formatGram(usageInfo?.usedGram)],
                 ['현재 남은 양', formatGram(usageInfo?.displayRemaining)],
-                ['예상 잔 수', usageInfo?.estimatedCups == null ? '-' : `${usageInfo.estimatedCups}잔`],
-                ['이번 저장 후', remainingAfterThisShot == null ? '-' : `${formatGram(remainingAfterThisShot)} / ${estimatedCupsAfterThisShot ?? '-'}잔`],
+                ['예상 잔 수', usageInfo?.estimatedCups == null ? '입력값 부족' : `${usageInfo.estimatedCups}잔`],
+                ['이번 저장 후', remainingAfterThisShot == null ? '입력값 부족' : `${formatGram(remainingAfterThisShot)} / ${estimatedCupsAfterThisShot ?? '입력값 부족'}잔`],
               ].map(([label, value]) => (
                 <MetricChip key={label} label={label} value={value} colors={colors} />
               ))}
@@ -1782,19 +1828,18 @@ export default function LogScreen() {
               placeholder="예: 다음 샷에서 무엇을 먼저 바꾸면 좋을까?"
               placeholderTextColor={colors.textTertiary}
             />
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <TouchableOpacity accessibilityRole="button" accessibilityLabel="프롬프트 복사" style={[styles.button, { flex: 1, paddingHorizontal: 0 }]} onPress={() => copyLogForAi(aiSheetLog)}>
+                <MaterialIcons name="content-copy" size={22} color="#fff" />
+              </TouchableOpacity>
+              <TouchableOpacity accessibilityRole="button" accessibilityLabel="ChatGPT로 열기" style={[styles.ghostButton, { flex: 1, paddingHorizontal: 0 }]} onPress={() => copyLogForAi(aiSheetLog, 'chatgpt')}>
+                <MaterialIcons name="chat" size={22} color={colors.text} />
+              </TouchableOpacity>
+              <TouchableOpacity accessibilityRole="button" accessibilityLabel="Gemini로 열기" style={[styles.ghostButton, { flex: 1, paddingHorizontal: 0 }]} onPress={() => copyLogForAi(aiSheetLog, 'gemini')}>
+                <MaterialIcons name="diamond" size={22} color={colors.text} />
+              </TouchableOpacity>
+            </View>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-              <TouchableOpacity style={styles.button} onPress={() => copyLogForAi(aiSheetLog)}>
-                <MaterialIcons name="content-copy" size={18} color="#fff" />
-                <Text style={styles.buttonText}>프롬프트 복사</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.ghostButton} onPress={() => copyLogForAi(aiSheetLog, 'chatgpt')}>
-                <MaterialIcons name="chat" size={18} color={colors.text} />
-                <Text style={styles.ghostText}>ChatGPT로 열기</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.ghostButton} onPress={() => copyLogForAi(aiSheetLog, 'gemini')}>
-                <MaterialIcons name="diamond" size={18} color={colors.text} />
-                <Text style={styles.ghostText}>Gemini로 열기</Text>
-              </TouchableOpacity>
               {showDebugInfo && (
                 <TouchableOpacity
                   style={styles.ghostButton}
@@ -1942,7 +1987,7 @@ export default function LogScreen() {
               <TouchableOpacity style={styles.ghostButton} onPress={() => setTimerPreinfusion(timerElapsed)}><Text style={styles.ghostText}>프리 종료</Text></TouchableOpacity>
               <TouchableOpacity style={styles.ghostButton} onPress={resetLogTimer}><Text style={styles.ghostText}>리셋</Text></TouchableOpacity>
             </View>
-            <Text style={[styles.small, { textAlign: 'center', marginTop: 12 }]}>첫 방울 {timerFirstDrip == null ? '-' : formatSeconds(timerFirstDrip)} · 프리 종료 {timerPreinfusion == null ? '-' : formatSeconds(timerPreinfusion)}</Text>
+            <Text style={[styles.small, { textAlign: 'center', marginTop: 12 }]}>첫 방울 {timerFirstDrip == null ? '기록 없음' : formatSeconds(timerFirstDrip)} · 프리 종료 {timerPreinfusion == null ? '기록 없음' : formatSeconds(timerPreinfusion)}</Text>
             <TouchableOpacity style={[styles.button, { marginTop: 16 }]} onPress={applyLogTimer}>
               <MaterialIcons name="check" size={20} color="#fff" />
               <Text style={styles.buttonText}>Log에 적용</Text>

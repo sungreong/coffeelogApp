@@ -14,6 +14,9 @@ export interface DialInRecommendation {
 }
 
 const n = (value: number | null | undefined) => (typeof value === 'number' && Number.isFinite(value) ? value : null);
+const optionalSeconds = (value: number | null | undefined) => value == null ? '시간 미입력' : `${value.toFixed(1)}초`;
+const optionalRating = (value: number | null | undefined) => value == null ? '평점 미입력' : `${value}점`;
+const optionalGrind = (value: string | number | null | undefined) => value == null || value === '' ? '분쇄도 미입력' : `분쇄도 ${value}`;
 
 const numericGrindStep = (grindSize: string | null | undefined, direction: 'finer' | 'coarser') => {
   const parsed = Number(String(grindSize ?? '').trim());
@@ -197,9 +200,9 @@ export const getDialInRecommendation = (
 
   return {
     title,
-    summary: `최근 샷: ${brewTime?.toFixed(1) ?? '-'}초 · ${ratioText} · 평점 ${last.rating ?? '-'}/5`,
+    summary: `최근 샷: ${optionalSeconds(brewTime)} · ${ratioText} · ${optionalRating(last.rating)}`,
     action,
-    target: best ? `좋았던 기록: ${best.grindSize ?? '-'} / ${best.brewSeconds ?? '-'}초 / ${best.rating ?? '-'}점` : targetText,
+    target: best ? `좋았던 기록: ${optionalGrind(best.grindSizeExternal ?? best.grindSize)} / ${optionalSeconds(best.brewSeconds)} / ${optionalRating(best.rating)}` : targetText,
     reason,
     confidence,
     nextGrindSize,

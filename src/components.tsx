@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GlossaryId, getGlossaryEntry, shouldShowGlossaryHelp } from './constants/glossary';
 import { ThemeColors, spacing } from './constants/theme';
 import { Bean, BeanLotStatus, BrewLog, CoffeeProduct, CoffeePurchaseLot, RecordingMode } from './types/models';
-import { beanStatus, formatSeconds } from './utils';
+import { beanStatus } from './utils';
 import { DialInRecommendation } from './services/recommendation';
 import { getFreshnessInfo } from './services/beanInventory';
 import type { FreshnessInfo } from './services/beanInventory';
@@ -308,7 +308,7 @@ export function MetricChip({ label, value, colors }: { label: string; value: str
   return (
     <View style={{ minWidth: 92, flexGrow: 1, flexBasis: 92, borderWidth: 1, borderColor: colors.border, borderRadius: 8, paddingVertical: 9, paddingHorizontal: 10, backgroundColor: colors.surfaceAlt }}>
       <Text style={styles.small} numberOfLines={1}>{label}</Text>
-      <Text style={{ color: colors.text, fontWeight: '900', marginTop: 2 }} numberOfLines={1}>{value == null || value === '' ? '-' : value}</Text>
+      <Text style={{ color: colors.text, fontWeight: '900', marginTop: 2 }} numberOfLines={1}>{value == null || value === '' ? '미입력' : value}</Text>
     </View>
   );
 }
@@ -629,7 +629,7 @@ export function BeanInventoryStatusWidget({
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={{ color: colors.text, fontWeight: '900' }} numberOfLines={1}>{product?.name ?? '원두'}</Text>
               <Text style={styles.small} numberOfLines={1}>
-                남은 양 {remaining == null ? '-' : `${remaining}g`} · 기록 {logCount}회 · {freshness.compactMeta}
+                남은 양 {remaining == null ? '미입력' : `${remaining}g`} · 기록 {logCount}회 · {freshness.compactMeta}
               </Text>
             </View>
             <FreshnessBadge freshness={freshness} colors={colors} compact />
@@ -730,7 +730,7 @@ const compactLotIndexText = (bean: Bean, beans: Bean[]) => {
   return `${index >= 0 ? index + 1 : 1}번째 구매`;
 };
 
-const compactGram = (value: number | null | undefined) => value == null ? '-' : `${Math.round(value * 10) / 10}g`;
+const compactGram = (value: number | null | undefined) => value == null ? '미입력' : `${Math.round(value * 10) / 10}g`;
 
 const compactLotSearchText = (bean: Bean) => [
   bean.name,
@@ -947,7 +947,7 @@ export function CoffeeLotSelectorSheet({
         <Text style={{ color: colors.primary, fontWeight: '900' }}>{item.lots.length}개</Text>
       </View>
       <Text style={styles.small} numberOfLines={1}>
-        {item.hasActiveLot ? '보유 중' : '보관/소진'} · 최근 구매 {item.latestPurchase ? new Date(item.latestPurchase).toISOString().slice(0, 10) : '-'} · 최근 기록 {item.latestLog ? new Date(item.latestLog).toISOString().slice(0, 10) : '-'}
+        {item.hasActiveLot ? '보유 중' : '보관/소진'} · 최근 구매 {item.latestPurchase ? new Date(item.latestPurchase).toISOString().slice(0, 10) : '없음'} · 최근 기록 {item.latestLog ? new Date(item.latestLog).toISOString().slice(0, 10) : '없음'}
       </Text>
     </TouchableOpacity>
   );
@@ -973,7 +973,7 @@ export function CoffeeLotSelectorSheet({
             <Text style={{ color: colors.primary, fontWeight: '800', fontSize: 12 }} numberOfLines={1}>{compactLotStatusLabel[item.lotStatus] ?? item.lotStatus}</Text>
           </View>
           <View style={{ flex: 1, minWidth: 0 }}>
-            <Text style={{ color: colors.text, fontWeight: '800' }} numberOfLines={1}>구매 {item.purchaseDate ?? '-'} · 로스팅 {item.roastDate ?? '-'}</Text>
+            <Text style={{ color: colors.text, fontWeight: '800' }} numberOfLines={1}>구매 {item.purchaseDate ?? '미입력'} · 로스팅 {item.roastDate ?? '미입력'}</Text>
             <Text style={styles.small} numberOfLines={1}>{freshness.compactMeta} · 남은 양 {compactGram(item.remainingWeightGram)}</Text>
           </View>
           <View style={{ alignItems: 'flex-end', gap: 5 }}>
@@ -1165,16 +1165,81 @@ function IoniconsFallback({ colors }: { colors: ThemeColors }) {
   return <MaterialIcons name="coffee" color={colors.primary} size={28} />;
 }
 
+const recordingModeText: Record<string, string> = {
+  quick: '빠른 기록',
+  guided: '가이드 기록',
+  precision: '정밀 기록',
+};
+
+const timeSourceText: Record<string, string> = {
+  manual: '시간 직접 입력',
+  in_app_timer: '앱 타이머',
+  external_scale: '저울 타이머',
+  external_timer: '외부 타이머',
+  estimated: '시간 추정',
+};
+
+const basketTypeText: Record<string, string> = {
+  single_wall_1cup: '싱글월 1컵',
+  single_wall_2cup: '싱글월 2컵',
+  dual_wall_1cup: '듀얼월 1컵',
+  dual_wall_2cup: '듀얼월 2컵',
+};
+
+const shotButtonText: Record<string, string> = {
+  '1cup': '1 CUP 버튼',
+  '2cup': '2 CUP 버튼',
+  manual: '수동 정지',
+};
+
+const doseLevelText: Record<string, string> = {
+  under: '도즈 적음',
+  ideal: '도즈 적정',
+  a_bit_more: 'A Bit More',
+  over: '도즈 많음',
+};
+
+const pressureZoneText: Record<string, string> = {
+  low: '압력 낮음',
+  espresso_range: '압력 적정 범위',
+  high: '압력 높음',
+};
+
+const optionalGram = (label: string, value: number | string | null | undefined) => {
+  if (value == null || value === '') return `${label} 미입력`;
+  return `${label} ${value}g`;
+};
+
+const optionalPlain = (label: string, value: number | string | null | undefined) => {
+  if (value == null || value === '') return `${label} 미입력`;
+  return `${label} ${value}`;
+};
+
+const optionalBrewTime = (seconds: number | null | undefined) => {
+  if (seconds == null) return '시간 미입력';
+  if (seconds < 60) return `${Math.round(seconds * 10) / 10}초`;
+  const minutes = Math.floor(seconds / 60);
+  const rest = Math.round((seconds - minutes * 60) * 10) / 10;
+  return `${minutes}분 ${rest}초`;
+};
+
 export function LogSummary({ log, colors, compact }: { log: BrewLog; colors: ThemeColors; compact?: boolean }) {
   const styles = createCommonStyles(colors);
+  const dose = log.actualDoseGram ?? log.doseGram;
+  const summary = [
+    optionalPlain('분쇄도', log.grindSizeExternal ?? log.grindSize),
+    optionalGram('도징량', dose),
+    optionalGram('추출량', log.yieldGram),
+    optionalBrewTime(log.brewSeconds),
+  ].join(' · ');
   const details = [
-    log.recordingModeUsed ? `${log.recordingModeUsed} 기록` : null,
-    log.timeMeasurementSource ? `시간 ${log.timeMeasurementSource}` : null,
-    log.doseMode ? `${log.doseMode === 'auto' ? 'AUTO' : 'MANUAL'} 도징` : null,
-    log.basketType ? log.basketType.replace(/_/g, ' ') : null,
-    log.shotButton ? `${log.shotButton.toUpperCase()} 버튼` : null,
-    log.doseLevel ? `도즈 ${log.doseLevel}` : null,
-    log.pressureZone ? `압력 ${log.pressureZone}` : null,
+    log.recordingModeUsed ? recordingModeText[log.recordingModeUsed] ?? '기록' : null,
+    log.timeMeasurementSource ? timeSourceText[log.timeMeasurementSource] ?? null : null,
+    log.doseMode ? `${log.doseMode === 'auto' ? '자동' : '수동'} 도징` : null,
+    log.basketType ? basketTypeText[log.basketType] ?? null : null,
+    log.shotButton ? shotButtonText[log.shotButton] ?? null : null,
+    log.doseLevel && log.doseLevel !== 'unknown' ? doseLevelText[log.doseLevel] ?? null : null,
+    log.pressureZone && log.pressureZone !== 'unknown' ? pressureZoneText[log.pressureZone] ?? null : null,
     log.shotResult,
     log.channeling && log.channeling !== 'none' ? `채널링 ${log.channeling === 'suspected' ? '의심' : '보임'}` : null,
     log.puckPrep,
@@ -1191,7 +1256,7 @@ export function LogSummary({ log, colors, compact }: { log: BrewLog; colors: The
       </View>
       <Text style={styles.small}>{log.drinkType ?? '커피 종류 미입력'} · {new Date(log.brewedAt).toLocaleString('ko-KR')}</Text>
       <Text style={{ color: colors.textSecondary, marginTop: 8 }}>
-        분쇄 {log.grindSizeExternal ?? log.grindSize ?? '-'} · 도징 {log.actualDoseGram ?? log.doseGram ?? '-'}g · 수율 {log.yieldGram ?? '-'}g · {formatSeconds(log.brewSeconds)}
+        {summary}
       </Text>
       {!compact && !!details && <Text style={styles.small}>{details}</Text>}
       {!compact && !!log.resultMemo && <Text style={{ color: colors.text, marginTop: 8 }}>{log.resultMemo}</Text>}

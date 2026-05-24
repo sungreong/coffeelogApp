@@ -27,6 +27,11 @@ const average = (values: Array<number | null | undefined>) => {
   return nums.reduce((sum, value) => sum + value, 0) / nums.length;
 };
 
+const optionalDate = (value: string | null | undefined) => value ?? '미입력';
+const optionalText = (value: string | number | null | undefined) => value == null || value === '' ? '미입력' : `${value}`;
+const optionalGram = (value: string | number | null | undefined) => value == null || value === '' ? '미입력' : `${value}g`;
+const optionalSeconds = (value: number | null | undefined) => value == null ? '미입력' : formatSeconds(value);
+
 function RecentPatternCard({ logs, beans, colors }: { logs: BrewLog[]; beans: Bean[]; colors: ThemeColors }) {
   const styles = createCommonStyles(colors);
   const beanNames = new Map(beans.map(bean => [bean.id, bean.name]));
@@ -40,9 +45,9 @@ function RecentPatternCard({ logs, beans, colors }: { logs: BrewLog[]; beans: Be
 
   const rows = [
     ['30일 기록', `${recent.length}회`],
-    ['평균 평점', avgRating == null ? '-' : `${avgRating.toFixed(1)}/5`],
-    ['최다 음료', topDrinks[0] ? `${topDrinks[0][0]} ${topDrinks[0][1]}회` : '-'],
-    ['최다 원두', topBeans[0] ? `${topBeans[0][0]} ${topBeans[0][1]}회` : '-'],
+    ['평균 평점', avgRating == null ? '아직 없음' : `${avgRating.toFixed(1)}/5`],
+    ['최다 음료', topDrinks[0] ? `${topDrinks[0][0]} ${topDrinks[0][1]}회` : '아직 없음'],
+    ['최다 원두', topBeans[0] ? `${topBeans[0][0]} ${topBeans[0][1]}회` : '아직 없음'],
   ];
 
   return (
@@ -77,7 +82,7 @@ function RecentPatternCard({ logs, beans, colors }: { logs: BrewLog[]; beans: Be
       </View>
       {best ? (
         <Text style={{ color: colors.textSecondary }}>
-          최근 좋은 기록: {best.beanName ?? beanNames.get(best.beanId) ?? '원두'} / {best.drinkType ?? '커피'} / 분쇄 {best.grindSize ?? '-'} / {best.brewSeconds ?? '-'}초 / {best.rating ?? '-'}점
+          최근 좋은 기록: {best.beanName ?? beanNames.get(best.beanId) ?? '원두'} / {best.drinkType ?? '커피 종류 미입력'} / 분쇄도 {optionalText(best.grindSizeExternal ?? best.grindSize)} / 시간 {optionalSeconds(best.brewSeconds)} / 평점 {best.rating == null ? '미입력' : `${best.rating}점`}
         </Text>
       ) : (
         <Text style={styles.subtitle}>최근 30일 기록이 쌓이면 자주 마신 원두와 커피 종류가 여기에 표시됩니다.</Text>
@@ -150,7 +155,7 @@ export default function HomeScreen() {
             <CompactSelectionBar
               title={selectedBean?.name}
               subtitle={selectedBean ? `${selectedBean.roastery || '로스터리 미입력'} · ${selectedFreshness?.label ?? '신선도 확인 필요'}` : '원두 탭에서 첫 원두를 등록하세요'}
-              meta={selectedBean ? `구매 ${selectedBean.purchaseDate ?? '-'} · 로스팅 ${selectedBean.roastDate ?? '-'} · 개봉 ${selectedBean.openedDate ?? '-'}` : null}
+              meta={selectedBean ? `구매 ${optionalDate(selectedBean.purchaseDate)} · 로스팅 ${optionalDate(selectedBean.roastDate)} · 개봉 ${optionalDate(selectedBean.openedDate)}` : null}
               colors={colors}
               onChange={() => router.push('/beans')}
               onDetail={() => router.push('/beans')}
@@ -159,7 +164,7 @@ export default function HomeScreen() {
               <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 8, padding: 12 }}>
                 <Text style={{ color: colors.text, fontWeight: '900' }}>좋았던 설정</Text>
                 <Text style={styles.small}>
-                  분쇄 {favorite.grindSizeExternal ?? favorite.grindSize ?? '-'} · {favorite.doseMode === 'manual' ? 'MANUAL' : 'AUTO'} · 도징 {favorite.actualDoseGram ?? favorite.doseGram ?? '-'}g · 수율 {favorite.yieldGram ?? '-'}g · {formatSeconds(favorite.brewSeconds)}
+                  분쇄도 {optionalText(favorite.grindSizeExternal ?? favorite.grindSize)} · {favorite.doseMode === 'manual' ? '수동 도징' : '자동 도징'} · 도징량 {optionalGram(favorite.actualDoseGram ?? favorite.doseGram)} · 추출량 {optionalGram(favorite.yieldGram)} · 시간 {optionalSeconds(favorite.brewSeconds)}
                 </Text>
               </View>
             ) : (
@@ -189,7 +194,7 @@ export default function HomeScreen() {
             <MetricChip label="원두" value={stats?.beanCount ?? 0} colors={colors} />
             <MetricChip label="기록" value={stats?.logCount ?? 0} colors={colors} />
             <MetricChip label="7일" value={stats?.recent7DaysCount ?? 0} colors={colors} />
-            <MetricChip label="평균" value={stats?.averageRating?.toFixed(1) ?? '-'} colors={colors} />
+            <MetricChip label="평균" value={stats?.averageRating?.toFixed(1) ?? '아직 없음'} colors={colors} />
           </View>
 
           <Text style={styles.sectionTitle}>빠른 관리</Text>

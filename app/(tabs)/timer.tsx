@@ -72,6 +72,10 @@ function Chip({ label, active, colors, onPress }: { label: string; active: boole
 }
 
 const splitTags = (value: string | null | undefined) => (value ?? '').split(',').map(item => item.trim()).filter(Boolean);
+const optionalText = (value: string | null | undefined, fallback = '미입력') => value?.trim() || fallback;
+const optionalDate = (value: string | null | undefined) => value ?? '미입력';
+const optionalGram = (value: string | null | undefined) => optionalText(value) === '미입력' ? '미입력' : `${value}g`;
+const optionalSeconds = (value: string | number | null | undefined) => value == null || value === '' ? '기록 없음' : `${value}초`;
 
 export default function TimerScreen() {
   const colors = useSettingsStore(s => s.isDarkMode) ? darkColors : lightColors;
@@ -273,14 +277,14 @@ export default function TimerScreen() {
         <CompactSelectionBar
           title={bean?.name}
           subtitle={bean ? `${bean.roastery || '로스터리 미입력'} · ${beanStatus(bean.expiryDate, bean.openedDate)}` : '타이머 시작 전에 원두/구매분을 선택하세요'}
-          meta={bean ? `구매 ${bean.purchaseDate ?? '-'} · 로스팅 ${bean.roastDate ?? '-'} · 개봉 ${bean.openedDate ?? '-'}` : null}
+          meta={bean ? `구매 ${optionalDate(bean.purchaseDate)} · 로스팅 ${optionalDate(bean.roastDate)} · 개봉 ${optionalDate(bean.openedDate)}` : null}
           colors={colors}
           onChange={running ? undefined : () => setBeanPickerOpen(true)}
           onDetail={bean && !running ? () => setSettingsOpen(true) : undefined}
         />
         <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 8, padding: 10 }}>
           <Text style={{ color: colors.text, fontWeight: '900' }} numberOfLines={1}>
-            기준 레시피 · 분쇄 {shot.grindSizeExternal || shot.grindSize || '-'} · 도징 {shot.actualDoseGram || shot.doseGram ? `${shot.actualDoseGram || shot.doseGram}g` : '-'} · 수율 {shot.yieldGram ? `${shot.yieldGram}g` : '-'} · 목표 {targetInput == null ? `${target}초` : `${targetInput}초`}
+            기준 레시피 · 분쇄도 {optionalText(shot.grindSizeExternal || shot.grindSize)} · 도징량 {optionalGram(shot.actualDoseGram || shot.doseGram)} · 추출량 {optionalGram(shot.yieldGram)} · 목표 {targetInput == null ? `${target}초` : `${targetInput}초`}
           </Text>
         </View>
         {!running && (
@@ -310,7 +314,7 @@ export default function TimerScreen() {
 
       <BottomSheetModal visible={settingsOpen} title="이번 샷 세팅" subtitle="타이머 위에는 핵심만 보이고, 자세한 값은 여기서 조정합니다." colors={colors} onClose={() => setSettingsOpen(false)}>
         <Text style={{ color: colors.text, fontSize: 18, fontWeight: '900' }}>{bean?.name ?? '원두 없음'}</Text>
-        <Text style={styles.subtitle}>원두 기본 세팅과 최근 기록만 불러옵니다. 모르는 값은 빈칸으로 두면 저장 시 모름으로 남습니다.</Text>
+        <Text style={styles.subtitle}>원두 기본 세팅과 최근 기록만 불러옵니다. 확실하지 않은 값은 빈칸으로 두면 됩니다.</Text>
         {isBes876 ? (
           <>
             <TermLabel label="BES876 도징 모드" glossaryId="auto_manual_dosing" recordingMode="guided" colors={colors} />
@@ -377,7 +381,7 @@ export default function TimerScreen() {
                   ['ideal', 'Ideal'],
                   ['a_bit_more', 'A Bit More'],
                   ['over', 'Over'],
-                  ['unknown', '모름'],
+                  ['unknown', '기록 안 함'],
                 ].map(([value, label]) => <Chip key={value} label={label} active={shot.doseLevel === value} colors={colors} onPress={() => patchShot('doseLevel', value)} />)}
               </View>
             </>
@@ -388,7 +392,7 @@ export default function TimerScreen() {
               ['low', '압력 낮음'],
               ['espresso_range', '정상 범위'],
               ['high', '압력 높음'],
-              ['unknown', '압력 모름'],
+              ['unknown', '기록 안 함'],
             ].map(([value, label]) => <Chip key={value} label={label} active={shot.pressureZone === value} colors={colors} onPress={() => patchShot('pressureZone', value)} />)}
           </View>
           <Text style={styles.label}>음료 레시피</Text>
@@ -405,7 +409,7 @@ export default function TimerScreen() {
       </BottomSheetModal>
 
       <View style={[styles.card, { alignItems: 'center', marginTop: 18 }]}>
-        <Text style={{ color: colors.textSecondary, fontWeight: '800' }}>{shot.drinkType || '종류 모름'} · 분쇄 {shot.grindSize || '모름'} · 목표 {targetInput == null ? '모름' : `${targetInput}초`}</Text>
+        <Text style={{ color: colors.textSecondary, fontWeight: '800' }}>{optionalText(shot.drinkType, '커피 종류 미입력')} · 분쇄도 {optionalText(shot.grindSizeExternal || shot.grindSize)} · 목표 {targetInput == null ? '미입력' : `${targetInput}초`}</Text>
         <Text style={{ color: colors.text, fontSize: 72, fontWeight: '900', marginVertical: 16 }}>{formatSeconds(elapsed)}</Text>
         <View style={{ width: '100%', height: 12, borderRadius: 8, backgroundColor: colors.surfaceAlt, overflow: 'hidden' }}>
           <View style={{ width: `${progress * 100}%` as any, height: '100%', backgroundColor: progress >= 1 ? colors.danger : colors.primary }} />
@@ -441,7 +445,7 @@ export default function TimerScreen() {
           <TouchableOpacity style={styles.ghostButton} onPress={() => { setLaps(prev => [...prev, elapsed]); setLapsOpen(true); }}><Text style={styles.ghostText}>구간 기록</Text></TouchableOpacity>
           <TouchableOpacity style={styles.ghostButton} onPress={reset}><Text style={styles.ghostText}>리셋</Text></TouchableOpacity>
         </View>
-        <Text style={[styles.small, { marginTop: 10 }]}>첫 방울 {firstDripLap == null ? shot.firstDripSeconds || '-' : formatSeconds(firstDripLap)} · 프리 종료 {preinfusionLap == null ? shot.preinfusionSeconds || '-' : formatSeconds(preinfusionLap)}</Text>
+        <Text style={[styles.small, { marginTop: 10 }]}>첫 방울 {firstDripLap == null ? optionalSeconds(shot.firstDripSeconds) : formatSeconds(firstDripLap)} · 프리 종료 {preinfusionLap == null ? optionalSeconds(shot.preinfusionSeconds) : formatSeconds(preinfusionLap)}</Text>
       </View>
 
       {!running && elapsed > 0 ? (
@@ -451,7 +455,7 @@ export default function TimerScreen() {
             <Text style={{ color: colors.text, fontSize: 18, fontWeight: '900', marginBottom: 8 }}>측정값만 넘기기</Text>
             <Text style={styles.subtitle}>총 추출 시간과 첫 방울을 새 Log에 채웁니다. 프리인퓨전은 알고 있을 때만 함께 넘어가는 선택값입니다.</Text>
             <Text style={{ color: colors.text, fontSize: 18, fontWeight: '900', marginTop: 12 }}>
-              총 {formatSeconds(elapsed)} · 첫 방울 {firstDripLap == null ? shot.firstDripSeconds || '-' : formatSeconds(firstDripLap)} · 프리 {preinfusionLap == null ? shot.preinfusionSeconds || '-' : formatSeconds(preinfusionLap)}
+              총 {formatSeconds(elapsed)} · 첫 방울 {firstDripLap == null ? optionalSeconds(shot.firstDripSeconds) : formatSeconds(firstDripLap)} · 프리 {preinfusionLap == null ? optionalSeconds(shot.preinfusionSeconds) : formatSeconds(preinfusionLap)}
             </Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 14 }}>
               <TouchableOpacity style={[styles.button, { flexGrow: 1 }]} onPress={useInNewLog}>
