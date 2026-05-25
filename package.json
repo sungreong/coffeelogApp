@@ -2,6 +2,22 @@
   "name": "coffeelog",
   "main": "expo-router/entry",
   "version": "1.0.0",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sungreong/coffeelogApp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/sungreong/coffeelogApp/issues"
+  },
+  "homepage": "https://github.com/sungreong/coffeelogApp#readme",
+  "keywords": [
+    "coffee",
+    "espresso",
+    "expo",
+    "react-native",
+    "sqlite"
+  ],
   "scripts": {
     "start": "set EXPO_NO_DEPENDENCY_VALIDATION=1&& npx expo start -c --tunnel",
     "start:check": "npx expo start -c --tunnel",

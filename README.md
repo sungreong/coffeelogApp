@@ -1,5 +1,9 @@
 # CoffeeLog
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Expo](https://img.shields.io/badge/Expo-54-black.svg)](https://expo.dev/)
+[![React Native](https://img.shields.io/badge/React%20Native-0.81-blue.svg)](https://reactnative.dev/)
+
 CoffeeLog는 원두 구매부터 에스프레소 추출 기록, 잔량 관리, 타이머, AI 프롬프트 복사까지 한곳에서 관리하는 개인용 커피 로그 앱입니다. Expo / React Native 기반으로 만들었고, 데이터는 로컬 SQLite에 저장합니다.
 
 ## 어필 포인트
@@ -12,6 +16,15 @@ CoffeeLog는 원두 구매부터 에스프레소 추출 기록, 잔량 관리, �
 - 좋은 기록과 최근 패턴을 바탕으로 다음 샷에서 바꿀 값 하나를 추천하고, ChatGPT/Gemini에 붙여넣기 쉬운 프롬프트를 생성합니다.
 - 타이머에서 측정한 총 추출 시간, 첫 방울, 프리인퓨전 값을 새 기록으로 넘길 수 있어 실제 추출 흐름이 끊기지 않습니다.
 - CSV, JSON, ZIP 내보내기와 로컬 백업을 지원해 개인 기록을 앱 밖에서도 보관할 수 있습니다.
+
+## 오픈소스
+
+CoffeeLog는 MIT 라이선스로 공개된 오픈소스 프로젝트입니다. 버그 제보, 기능 제안, 문서 개선, 작은 UI 문구 수정도 모두 환영합니다.
+
+- 기여 가이드: [CONTRIBUTING.md](CONTRIBUTING.md)
+- 행동 강령: [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
+- 보안 정책: [SECURITY.md](SECURITY.md)
+- 라이선스: [LICENSE](LICENSE)
 
 ## 주요 기능
 
@@ -94,6 +107,12 @@ npm run typecheck
 npm run doctor
 ```
 
+## 기여 흐름
+
+1. 이슈에서 작업할 내용을 확인하거나 새 이슈를 만듭니다.
+2. 변경 후 `npm run typecheck`로 기본 검증을 실행합니다.
+3. Pull Request에는 변경 이유, 확인한 명령, 화면 변경이 있다면 스크린샷을 함께 적습니다.
+
 ## 프로젝트 구조
 
 ```text
@@ -115,3 +134,7 @@ src/
   types/           앱 데이터 타입
 android/           Android 네이티브 프로젝트
 ```
+
+## 라이선스
+
+이 프로젝트는 [MIT License](LICENSE)를 따릅니다.
