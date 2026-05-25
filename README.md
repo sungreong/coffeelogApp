@@ -26,6 +26,12 @@ CoffeeLog는 MIT 라이선스로 공개된 오픈소스 프로젝트입니다. �
 - 보안 정책: [SECURITY.md](SECURITY.md)
 - 라이선스: [LICENSE](LICENSE)
 
+## 저장소 미리보기
+
+![GitHub repository preview](assets/screenshots/github-repository-preview.png)
+
+![README open source preview](assets/screenshots/github-readme-preview.png)
+
 ## 주요 기능
 
 - 원두 제품/구매분 등록, 수정, 상태 관리
